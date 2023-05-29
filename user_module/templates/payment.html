@@ -1,0 +1,62 @@
+<!-- payment.html -->
+
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Payment Details</h2>
+
+  <form id="payment-form">
+    <div id="card-element">
+      <!-- Card input fields will be rendered here -->
+    </div>
+    <button type="submit">Pay</button>
+  </form>
+
+  <script src="https://js.stripe.com/v3/"></script>
+  <script>
+    const stripe = Stripe('{{ STRIPE_PUBLISHABLE_KEY }}');
+    const elements = stripe.elements();
+    const cardElement = elements.create('card');
+    cardElement.mount('#card-element');
+
+    const form = document.getElementById('payment-form');
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const { paymentMethod, error } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+      });
+
+      if (error) {
+        console.error(error);
+      } else {
+        // Send the payment method ID to your server for processing
+        const paymentMethodId = paymentMethod.id;
+        fetch('/process_payment/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}',
+          },
+          body: JSON.stringify({ paymentMethodId }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              alert('Payment successful!');
+              // Redirect or show a success message
+            } else {
+              alert('Payment failed. Please try again.');
+              // Show an error message
+            }
+          })
+          .catch((error) => {
+            console.error(error);
+            alert('Payment failed. Please try again.');
+            // Show an error message
+          });
+      }
+    });
+  </script>
+{% endblock %}

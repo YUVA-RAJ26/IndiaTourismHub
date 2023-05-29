@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+{% if error_msg %}
+<script>
+    alert('{{ error_msg }}');
+</script>
+{% endif %}
+
+{% block content %}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <form method="post" id="login-form">
+                {% csrf_token %}
+                <br>
+                <!-- <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" class="form-control" required>
+                </div> -->
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" class="form-control" required>
+                </div>
+                <div class="form-group">
+                  <label for="contact_no">Contact Number:</label>
+                  <input type="text" id="contact_no" name="contact_no" class="form-control" required>
+                </div>            
+                <div class="form-group text-center">
+                    <input type="submit" value="Sign Up" class="btn btn-primary">
+                </div>
+                <br>
+                <div class="form-group text-center">
+                    <a href="{% url 'user_module:login_page' %}" class="btn btn-link">Login</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<script>
+    $(function () {
+      $("#login-form").on("submit", function (event) {
+        event.preventDefault();
+        var email = $("#email").val();
+        var password = $("#password").val();
+        var username = $("#username").val();
+        var csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+
+        data = {
+          email: email,
+          password: password,
+          username: username,
+        };
+  
+        $.ajax({
+          type: 'POST',
+          url: "{% url 'user_module:signup_api' %}",
+          data: data,
+          headers: {
+            'X-CSRFToken': csrf_token
+          },
+          success: function(data, status) {
+            alert(status);
+            alert('Siggnedup successfully');
+            window.location.href = "{% url 'user_module:login_page' %}";
+          },
+          error: function(xhr, errmsg, err) {
+            alert('Error: ' + xhr.status + ': ' + xhr.responseText);
+          }
+        });
+      });
+    });
+</script>

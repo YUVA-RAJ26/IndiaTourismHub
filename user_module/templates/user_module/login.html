@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+{% if error_msg %}
+<script>
+    alert('{{ error_msg }}');
+</script>
+{% endif %}
+
+{% block content %}
+<div class="container">
+  <div class="row justify-content-center">
+      <div class="col-md-6">
+          <form method="post" id="login-form">
+              <br>
+              {% csrf_token %}
+              <div class="form-group">
+                  <label for="email">Email:</label>
+                  <input type="email" id="email" name="email" class="form-control" required>
+              </div>
+              <div class="form-group">
+                  <label for="password">Password:</label>
+                  <input type="password" id="password" name="password" class="form-control" required>
+              </div>
+              <div class="form-group text-center">
+                  <input type="submit" value="Login" class="btn btn-primary">
+              </div>
+          </form>
+          <div class="form-group">
+              <a href="{% url 'user_module:sign_up' %}" class="btn btn-link">Sign Up</a>
+          </div>
+          
+          <div class="form-group text-center">
+              <hr>
+              <p>or</p>
+              <button type="button" id="otp-login-btn" class="btn btn-primary">Login by OTP</button>
+          </div>
+          
+          <div id="otp-login-form" style="display: none;">
+            <form method="post">
+                <div class="form-group">
+                    <label for="email-otp">Email:</label>
+                    <input type="email" id="email-otp" name="email" class="form-control" required>
+                </div>
+                <div id="otp-field" style="display: none;">
+                    <div class="form-group">
+                        <label for="otp">OTP:</label>
+                        <input type="text" id="otp" name="otp" class="form-control" required>
+                    </div>
+                    <div class="form-group text-center">
+                        <button type="button" id="submit-otp-btn" class="btn btn-primary">Submit OTP</button>
+                    </div>
+                </div>
+                <div class="form-group text-center">
+                    <button type="button" id="send-otp-btn" class="btn btn-primary">Send OTP</button>
+                </div>
+            </form>
+        </div>
+        
+      </div>
+  </div>
+</div>
+
+{% endblock %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Show OTP login form on button click
+    $("#otp-login-btn").click(function() {
+        $("#otp-login-form").show();
+    });
+  
+    // Handle OTP form submission and trigger OTP email
+    $("#send-otp-btn").click(function() {
+        event.preventDefault();
+        var email = $("#email-otp").val();
+        var csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+
+        // Send AJAX request to trigger OTP email
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'user_module:send_otp_email' %}",
+            data: {
+                email: email,
+                csrfmiddlewaretoken: csrf_token,
+            },
+            success: function(data, status) {
+                console.log('OTP sent successfully');
+                $("#otp-field").show();
+                $("#submit-otp-btn").show();
+                $("#email-otp").prop("disabled", true);
+                $("#send-otp-btn").hide();     
+            },
+            error: function(xhr, errmsg, err) {
+                alert('Ops! Invalid data!');
+            }
+        });
+    });
+
+    $("#submit-otp-btn").click(function(event) {
+      event.preventDefault();
+      var email = $("#email-otp").val();
+      var otp = $("#otp").val();
+      var csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+      $.ajax({
+        type: 'POST',
+        url: "{% url 'user_module:login_api' %}",
+        data: {
+          email: email,
+          otp: otp,
+          csrfmiddlewaretoken: csrf_token
+        },
+        success: function(data, status) {
+          alert('OTP verification successful');
+          window.location.href = "{% url 'user_module:home' %}";
+          // Perform further actions
+        },
+        error: function(xhr, errmsg, err) {
+          alert('Oops! Invalid OTP!');
+        }
+      });
+    });
+});
+
+</script>
+
+<script>
+    $(function () {
+      $("#login-form").on("submit", function (event) {
+        event.preventDefault();
+        var email = $("#email").val();
+        var password = $("#password").val();
+        var csrf_token = $('input[name="csrfmiddlewaretoken"]').val();
+        
+        data = {
+          email: email,
+          password: password
+        };
+  
+        $.ajax({
+          type: 'POST',
+          url: "{% url 'user_module:login_api' %}",
+          data: data,
+          headers: {
+            'X-CSRFToken': csrf_token
+          },
+          success: function(data, status) {
+            console.log(data);
+            alert('Loggedin successfully');
+            window.location.href = "{% url 'user_module:home' %}";
+          },
+          error: function(xhr, errmsg, err) {
+            alert('Ops! Invalid data!');
+          }
+        });
+      });
+    });
+</script>

@@ -1,0 +1,205 @@
+{% include 'user_module/base.html' %}
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Bootstrap JavaScript files -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.3/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.min.js"></script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- tourist_list.html -->
+<!-- Include Bootstrap CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css">
+
+<form id="filterForm">
+  <div class="form-row">
+      <div class="form-group col-md-4">
+          <label for="state">State</label>
+          <select class="form-control" id="state" name="state">
+              <option value="">All</option>
+              {% for state in states %}
+              <option value="{{ state.id }}">{{ state.name }}</option>
+              {% endfor %}
+          </select>
+      </div>
+      <div class="form-group col-md-4">
+          <label for="district">District</label>
+          <select class="form-control" id="district" name="district">
+              <option value="">All</option>
+              {% for district in districts %}
+              <option value="{{ district.id }}">{{ district.name }}</option>
+              {% endfor %}
+          </select>
+      </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group col-md-4">
+      <label for="search">Search</label>
+      <input type="text" class="form-control" id="search" name="search">
+    </div>
+  </div>
+  <button type="button" id="searchButton" class="btn btn-primary">Search</button>
+  <a href="{% url 'admin_module:tourist_list' %}" class="btn btn-primary">Reset</a>
+</form>
+
+<br>
+<!-- Add a Bootstrap table -->
+<table id="tourist-table" class="table table-striped">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Description</th>
+      <th>Location Link</th>
+      <th>Address</th>
+      <th>Pincode</th>
+      <th>State</th>
+      <th>District</th>
+      <th>Images</th>
+      {% if not request.user.is_staff%}
+        <th>Action</th>
+      {% endif %}
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<!-- Add a button for adding a tourist place -->
+<button id="add-tourist-btn" class="btn btn-primary">Add Tourist Place</button>
+
+<!-- Include jQuery and Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/js/bootstrap.min.js"></script>
+
+<!-- Add JavaScript code -->
+<script>
+  $(document).ready(function() {
+    // Function to fetch and populate tourist places
+    var authToken = '{{ authToken }}';
+
+    function fetchTouristPlaces() {
+      $.ajax({
+        url: '/admin-module/tourist-places/',
+        type: 'GET',
+        headers: { 
+            "X-CSRFTOKEN": "{{ csrf_token }}",
+            "Authorization": "{{ authToken }}"
+        },
+        success: function(data) {
+          // Clear table body
+          $('#tourist-table tbody').empty();
+          
+          // Populate table with data
+          data.results.forEach(function(touristPlace) {
+            var row = `<tr>
+              <td>${touristPlace.name}</td>
+              <td>${touristPlace.description}</td>
+              <td><a href="${touristPlace.location_link}" target="_blank">${touristPlace.location_link}</a></td>
+              <td>${touristPlace.address}</td>
+              <td>${touristPlace.pincode}</td>
+              <td>${touristPlace.state_name}</td>
+              <td>${touristPlace.district_name}</td>
+              <td>
+                {% for image in touristPlace.images %}
+                  <img src="{{ image.image.url }}" alt="{{ image.caption }}" width="100" height="100">
+                {% endfor %}
+              </td>
+              {% if not request.user.is_staff%}
+                <td>
+                  <a href="/admin-module/tour-package-list/?touristPlaceId=${touristPlace.id}" class="btn btn-primary">Book</a>
+                </td>
+              {% endif %}
+            </tr>`;
+            $('#tourist-table tbody').append(row);
+          });
+        },
+        error: function() {
+          console.log('Error fetching tourist places');
+        }
+      });
+    }
+    
+    // Fetch and populate tourist places on page load
+    fetchTouristPlaces();
+    
+    // Event handler for "Add Tourist Place" button
+    $('#add-tourist-btn').click(function() {
+      // Redirect to the form page for adding a tourist place
+      window.location.href = '/admin-module/create-tourist/';
+    });
+  });
+</script>
+
+<script type="text/javascript">
+  // Filter and search tourist places
+  function filterAndSearchTouristPlaces() {
+    var state = $('#state').val();
+    var district = $('#district').val();
+    var search = $('#search').val();
+    var authToken = '{{ authToken }}';
+
+    $.ajax({
+      url: '/admin-module/tourist-places/',
+      type: 'GET',
+      headers: { 
+        "X-CSRFTOKEN": "{{ csrf_token }}",
+        "Authorization": "{{ authToken }}"
+      },
+      data: {
+        state: state,
+        district: district,
+        search: search
+      },
+      success: function(response) {
+        var touristPlaces = response.results;
+        displayTouristPlaces(touristPlaces);
+      },
+      error: function(response) {
+        console.log(response);
+      }
+    });
+  }
+
+  // Search tourist places
+  $(document).on('click', '#searchButton', function() {
+    filterAndSearchTouristPlaces();
+  });
+
+  // Filter tourist places on change
+  $(document).on('change', '#state, #district', function() {
+    filterAndSearchTouristPlaces();
+  });
+
+  // Function to display tourist places
+  function displayTouristPlaces(touristPlaces) {
+    $('#tourist-table tbody').empty();
+    touristPlaces.forEach(function(touristPlace) {
+      var row = `<tr>
+        <td>${touristPlace.name}</td>
+        <td>${touristPlace.description}</td>
+        <td>${touristPlace.location_link}</td>
+        <td>${touristPlace.address}</td>
+        <td>${touristPlace.pincode}</td>
+        <td>${touristPlace.state_name}</td>
+        <td>${touristPlace.district_name}</td>
+        touristPlace.images.forEach(function(image) {
+          row += '<img src="${image.image.url}" alt="${image.caption}" width="100" height="100">';
+        });
+    
+        row += '</td>'
+          <td>
+            ${request.user.is_staff ? `
+              <button class="btn btn-danger delete-btn" data-touristplace-id="${touristPlace.id}">Delete</button>
+            ` : `
+              <a href="/admin-module/tour-package-list/?touristPlaceId=${touristPlace.id}" class="btn btn-primary">Book</a>
+            `}
+          </td>
+        </tr>`;
+
+        $('#tourist-table tbody').append(row);
+
+
+    });
+  }
+</script>

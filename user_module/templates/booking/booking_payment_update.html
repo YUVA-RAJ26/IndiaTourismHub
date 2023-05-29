@@ -1,0 +1,58 @@
+{% include 'user_module/base.html' %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+<p>User: {{ booking.user }}</p>
+<p>Tour Package: {{ booking.tour_package.name }}</p>
+<p>Booking Date: {{ booking.book_date }}</p>
+<p>Contact Number: {{ booking.contact_number }}</p>
+<p>Payment Approved: {{ booking.payment_approved }}</p>
+<p>Number of Adults: {{ booking.num_adults }}</p>
+<p>Number of Children: {{ booking.num_children }}</p>
+<p>Price: {{ booking.price }}</p>
+
+<form id="paymentForm" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="file" name="payment_screenshot" id="paymentScreenshot">
+    <input type="hidden" name="booking_id" value="{{ booking.id }}">
+    <button type="submit">Upload Payment Screenshot</button>
+</form>
+
+<script>
+    // Add an event listener to the form submit event
+    document.getElementById('paymentForm').addEventListener('submit', function (event) {
+        event.preventDefault(); // Prevent the default form submission
+        
+        // Get the form data
+        var formData = new FormData(this);
+        var authToken = '{{ authToken }}';
+       
+        // Make an AJAX request to update the payment screenshot
+        $.ajax({
+            url: "{% url 'user_module:booking-detail' booking.id %}",
+            type: "PUT",
+            data: formData,
+            headers: { 
+                "X-CSRFTOKEN": "{{ csrf_token }}",
+                "Authorization": "{{ authToken }}"
+            },
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                // Handle the success response
+                console.log('Payment screenshot uploaded successfully');
+                // You can perform additional actions here, such as displaying a success message or refreshing the page
+                window.location.href = "{% url 'user_module:booking_list' %}";
+            },
+            error: function (error) {
+                // Handle the error response
+                console.error('Error uploading payment screenshot:', error);
+                // You can display an error message to the user or handle the error in any desired way
+            }
+        });
+    });
+</script>
+
+
+  

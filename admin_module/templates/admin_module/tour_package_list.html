@@ -1,0 +1,536 @@
+{% include 'user_module/base.html' %}
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Bootstrap JavaScript files -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.3/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.min.js"></script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- tourist_list.html -->
+<!-- Include Bootstrap CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css">
+
+
+
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Tour Packages</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    </head>
+<body>
+    <div class="container">
+        <h1>Tour Packages</h1>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <!-- <th>Discount Code</th> -->
+                    <th>Description</th>
+                    <th>Hotels</th>
+                    <th>Tourist Places</th>
+                    <th>Number of Days</th>
+                    <th>Number of Nights</th>
+                    <th>Price</th>
+                    <th>Action</th>  <!-- New column for action -->
+                </tr>
+            </thead>
+            <tbody id="tourPackageTableBody"></tbody>
+        </table>
+    </div>
+</body>
+</html>
+
+
+<script>
+$(document).ready(function() {
+    // Fetch and populate tour packages
+    fetchTourPackages();
+});
+
+function fetchTourPackages() {
+    var authToken = '{{ authToken }}';
+    var touristPlaceId = '{{ touristPlaceId|default:"None" }}';
+
+    $.ajax({
+        url: '/admin-module/tour-packages/',  // Update the URL according to your Django URLs
+        method: 'GET',
+        headers: { 
+            "X-CSRFTOKEN": "{{ csrf_token }}",
+            "Authorization": "{{ authToken }}"
+        },
+        data: {
+            touristPlaceId: touristPlaceId  // Pass the touristPlaceId as a parameter
+        },
+        success: function(data) {
+            // Clear existing table rows
+            $('#tourPackageTableBody').empty();
+            data = data.results;
+            // Populate tour packages data
+            for (var i = 0; i < data.length; i++) {
+                var tourPackage = data[i];
+                var row = $('<tr>');
+
+                // Create table cells and populate data
+                var nameCell = $('<td>').text(tourPackage.name);
+                // var discountCodeCell = $('<td>').text(tourPackage.discount_code);
+                var descriptionCell = $('<td>').text(tourPackage.description);
+                var hotelsCell = $('<td>').text(tourPackage.hotel_name);
+                var touristPlacesCell = $('<td>').text(tourPackage.tourist_place_name);
+                var daysCell = $('<td>').text(tourPackage.number_of_days);
+                var nightsCell = $('<td>').text(tourPackage.number_of_nights);
+                var price = $('<td>').text(tourPackage.price);
+                    
+                var actionCell = $('<td>');
+                var bookButton = $('<a>').data('tourPackageName', tourPackage.name).data('tourPackagePrice', tourPackage.price).data('tourPackageIdDiv', tourPackage.id)
+                .attr('href', '#bookingModal')
+                .attr('data-toggle', 'modal')
+                .attr('data-target', '#bookingModal')
+                .text('Book Package')
+                .addClass('btn btn-primary book-button');
+
+                actionCell.append(bookButton);
+
+
+                // Append cells to the row
+                row.append(nameCell, descriptionCell, hotelsCell, touristPlacesCell, daysCell, nightsCell, price, actionCell);
+
+                // Append row to the table body
+                $('#tourPackageTableBody').append(row);
+            }
+        },
+        error: function(xhr, textStatus, errorThrown) {
+            console.error('Failed to fetch tour packages:', errorThrown);
+        }
+    });
+}
+
+</script>
+
+{% if request.user.is_staff %}
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addHotelPackageModal">
+        Add Tour Package
+    </button>
+{% endif %}
+<div class="modal fade" id="addHotelPackageModal" tabindex="-1" role="dialog" aria-labelledby="addHotelPackageModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addHotelPackageModalLabel">Add Hotel Package</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Hotel Package Form -->
+                <form id="addTouristPackageForm">
+                    <div class="form-group">
+                        <label for="packageName">Package Name</label>
+                        <input type="text" class="form-control" id="packageName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <input type="text" class="form-control" id="description" required>
+                    </div>
+                    <!-- <div class="form-group">
+                        <label for="packageDiscountCode">Discount Code</label>
+                        <select class="form-control" id="packageDiscountCode">
+                            <option value="">Select Discount Code</option>
+                        </select>
+                    </div> -->
+                    <div class="form-group">
+                        <label for="packageTouristPlaces">Tourist Places</label>
+                        <select class="form-control" id="packageTouristPlaces" required>
+                            <!-- Populate tourist places dynamically using AJAX if needed -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="packageHotels">Hotels</label>
+                        <select class="form-control" id="packageHotels"  required>
+                            <!-- Populate hotels dynamically using AJAX if needed -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="packageNumDays">Number of Days</label>
+                        <input type="number" class="form-control" id="packageNumDays" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="packageNumNights">Number of Nights</label>
+                        <input type="number" class="form-control" id="packageNumNights" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="price">Price</label>
+                        <input type="number" class="form-control" id="price" min="0" required>
+                    </div>                    
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary" id="addTouristPackageBtn">Add Package</button>
+            </div>
+        </div>
+    </div>
+</div>
+    
+<script>
+    $(document).ready(function() {
+        console.log("JavaScript code is executed.");
+
+    // Fetch and populate tourist places
+    function populateTouristPlaces() {
+        var authToken = '{{ authToken }}';
+
+        $.ajax({
+            url: '/admin-module/tourist-places/',
+            method: 'GET',
+            headers: { 
+                "X-CSRFTOKEN": "{{ csrf_token }}",
+                "Authorization": "{{ authToken }}"
+            },
+            success: function(data) {
+                var options = '';
+                data.results.forEach(function(touristPlace) {
+                    options += '<option value="' + touristPlace.id + '">' + touristPlace.name + '</option>';
+                });
+                $('#packageTouristPlaces').html(options);
+            },
+            error: function(xhr, textStatus, errorThrown) {
+                console.error('Failed to fetch tourist places:', errorThrown);
+            }
+        });
+    }
+
+    $('#packageTouristPlaces').on('change', function() {
+        var selectedPlaceId = $(this).val();
+
+        if (selectedPlaceId) {
+            // Fetch the pincode of the selected tourist place
+            var authToken = '{{ authToken }}';
+
+            $.ajax({
+                url: '/admin-module/tourist-places/' + selectedPlaceId + '/',
+                method: 'GET',
+                headers: { 
+                    "X-CSRFTOKEN": "{{ csrf_token }}",
+                    "Authorization": "{{ authToken }}"
+                },
+                success: function(data) {
+                    var pincode = data.pincode;
+                    if (pincode) {
+                        // Fetch hotels based on the pincode
+                        $.ajax({
+                            url: '/admin-module/hotels/?pincode=' + pincode,
+                            method: 'GET',
+                            headers: { 
+                                "X-CSRFTOKEN": "{{ csrf_token }}",
+                                "Authorization": "{{ authToken }}"
+                            },
+                            success: function(data) {
+                                var hotels = data.results; // Assuming the hotel data is received in the 'results' field
+                                
+                                // Iterate over the hotels and create options for the select element
+                                $.each(hotels, function(index, hotel) {
+                                    // Empty the select element before appending new options
+                                    var option = $('<option>').val(hotel.id).text(hotel.name);
+                                    $('#packageHotels').append(option);
+                                });
+                            },
+                            error: function(xhr, textStatus, errorThrown) {
+                                console.error('Failed to fetch hotels:', errorThrown);
+                            }
+                        });
+                    }
+                },
+                error: function(xhr, textStatus, errorThrown) {
+                    console.error('Failed to fetch tourist place details:', errorThrown);
+                }
+            });
+        } else {
+            // Clear hotel options if no tourist place is selected
+            $('#packageHotels').html('');
+        }
+    });
+    // Fetch and populate hotels
+    function populateHotels() {
+        var authToken = '{{ authToken }}';
+
+        $.ajax({
+            url: '/admin-module/hotels/',
+            method: 'GET',
+            headers: { 
+                "X-CSRFTOKEN": "{{ csrf_token }}",
+                "Authorization": "{{ authToken }}"
+            },
+            success: function(data) {
+                var options = '';
+                data.results.forEach(function(hotel) {
+                    options += '<option value="' + hotel.id + '">' + hotel.name + '</option>';
+                });
+                $('#packageHotels').html(options);
+            },
+            error: function(xhr, textStatus, errorThrown) {
+                console.error('Failed to fetch hotels:', errorThrown);
+            }
+        });
+    }
+
+    // Call the functions to populate tourist places and hotels
+    populateTouristPlaces();
+    // populateHotels();
+    });
+
+    $(document).ready(function() {
+
+        $('#addTouristPackageBtn').click(function(event) {
+            event.preventDefault();
+            console.log("Form is submitted.");
+            var authToken = '{{ authToken }}';
+
+            // Get form data
+            var formData = {
+                name: $('#packageName').val(),
+                description: $('#description').val(), // Updated ID here
+                tourist_place: $('#packageTouristPlaces').val(),
+                hotels: $('#packageHotels').val(), 
+                number_of_days: $('#packageNumDays').val(), 
+                number_of_nights: $('#packageNumNights').val(), 
+                price: $('#price').val(), 
+                // Retrieve other form fields here...
+            };
+
+            // Submit the form via AJAX
+            $.ajax({
+                url: '/admin-module/tour-packages/',
+                method: 'POST',
+                data: formData,
+                headers: { 
+                    "X-CSRFTOKEN": "{{ csrf_token }}",
+                    "Authorization": "{{ authToken }}"
+                },
+                success: function(data) {
+                    // Handle success
+                    $('#addTouristPackageModal').modal('hide');
+                    alert('Tourist package created successfully.');
+                    location.reload();
+
+                    // You can perform additional actions like refreshing the table or fetching updated data
+                },
+                error: function(xhr, textStatus, errorThrown) {
+                    // Handle error
+                    alert('Failed to create tourist package: ' + errorThrown);
+                }
+            });
+        });
+    });
+
+</script>
+
+
+<!-- Booking modal -->
+<div class="modal fade" id="bookingModal" tabindex="-1" role="dialog" aria-labelledby="bookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="bookingModalLabel">Book Tour Package</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="bookingForm">
+            <div class="form-group">
+              <label for="tourPackageName">Tour Package</label>
+              <input type="text" class="form-control" id="tourPackageName" readonly>
+            </div>
+            <div class="form-group">
+              <label for="bookDate">Book Date</label>
+              <input type="date" class="form-control" id="bookDate" required>
+            </div>
+            <div class="form-group">
+              <label for="contactNumber">Contact Number</label>
+              <input type="text" class="form-control" id="contactNumber" required>
+            </div>
+            <!-- <div class="form-group">
+              <label for="numRooms">Number of Rooms</label>
+              <input type="number" class="form-control" id="numRooms" min="1" required>
+            </div> -->
+            <div class="form-group">
+              <label for="numAdults">Number of Adults</label>
+              <input type="number" class="form-control" id="numAdults" min="1" required>
+            </div>
+            <div class="form-group">
+              <label for="numChildren">Number of Children</label>
+              <input type="number" class="form-control" id="numChildren" min="0" required>
+            </div>
+            <!-- Price and discount price-->
+            <div class="form-group">
+              <label for="price">Price</label>
+              <input type="number" class="form-control" id="price1" name="price" readonly>
+            </div>
+
+            <input type="hidden" id="userId" name="userId" value="{{ request.user.id }}">
+            <input type="hidden" id="tourpackageId" name="tourpackageId">
+            <input type="hidden" id="discountCodeId" name="discountCodeId">  
+            <div class="form-group">
+              <label for="discountCode">Discount Code</label>
+              <input type="text" class="form-control" id="discountCode" name="discountCode">
+            </div>
+  
+            <button type="button" class="btn btn-primary" id="applyDiscount">Apply Discount</button>
+  
+            <div class="form-group">
+              <label for="totalPrice">Total Price</label>
+              <input type="text" class="form-control" id="totalPrice" name="totalPrice" readonly>
+            </div>
+  
+            <button id="book_btn" type="submit" class="btn btn-primary">Book</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          </form>
+        </div>
+      </div>
+    </div>
+</div>
+  
+  
+  
+<script>
+    // Submit the booking form
+    $(document).ready(function() {
+        // Open the booking modal and set the tour package name
+        $(document).on('click', '.book-button', function() {
+            var tourPackageName = $(this).data('tourPackageName');
+            $('#tourPackageName').val(tourPackageName);
+
+            var tourPackagePrice = $(this).data('tourPackagePrice');
+            $('#price1').val(tourPackagePrice);
+
+            var tourPackageId = $(this).data('tourPackageIdDiv');
+            $('#tourpackageId').val(tourPackageId);
+
+            calculateTotalPrice(tourPackagePrice);
+        });
+
+        // Clear the tour package name when the modal is closed
+        $('#bookingModal').on('hidden.bs.modal', function () {
+            $('#tourPackageName').val('');
+            $('#price1').val('');
+        });
+
+        function calculateTotalPrice(totalPrice) {
+            $('#totalPrice').val(totalPrice);
+        }
+
+        // Validate the book date to be greater than or equal to the current date
+        $('#bookDate').on('change', function() {
+            var selectedDate = new Date($(this).val());
+            var currentDate = new Date();
+
+            if (selectedDate < currentDate) {
+            $(this).addClass('is-invalid');
+            } else {
+            $(this).removeClass('is-invalid');
+            }
+        });
+    });
+
+    $(document).ready(function() {
+        // Calculate price when the discount code is applied
+        $('#applyDiscount').click(function() {
+            var discountCode = $('#discountCode').val();
+
+            // Make an API request to validate the discount code
+            // Assuming you have an API endpoint to validate the discount code and get the discounted price
+            // Replace 'api/validate-discount' with your actual API endpoint URL
+            $.get('/admin-module/discountcodes/', { code: discountCode })
+            .done(function(data) {
+                if (data) {
+                    console.log(data[0].discount_percentage);
+                    var originalPrice = $('#price1').val();
+                    var discountPercentage = data[0].discount_percentage;
+                    var discountedPrice = calculateDiscountedPrice(originalPrice, discountPercentage);
+
+                    // Update the price field with the discounted price
+                    $('#price').val(discountedPrice);
+
+                    // Calculate the total price and update the total price field
+                    var totalPrice = originalPrice - discountedPrice;
+                    alert('Hurrah! You saved ' + totalPrice);
+                    $('#totalPrice').val(discountedPrice);
+                    $('#bookingModal').find('#discountCodeId').val(data[0].id);
+                } else {
+                    // Handle invalid discount code case
+                    alert('Invalid discount code');
+                }
+            })
+            .fail(function() {
+                // Handle error case
+                alert('Error occurred while applying discount code');
+            });
+
+        });
+
+        // Function to calculate the discounted price based on the original price and discount percentage
+        function calculateDiscountedPrice(originalPrice, discountPercentage) {
+            var discountAmount = originalPrice * (discountPercentage / 100);
+            var discountedPrice = originalPrice - discountAmount;
+
+            return discountedPrice;
+        }
+    });
+
+    $(document).ready(function() {
+
+        $('#bookingForm').submit(function (event) {
+            event.preventDefault(); // Prevent form submission
+
+            // Collect the form data
+            var formData = {
+                tour_package: $('#tourpackageId').val(),
+                book_date: $('#bookDate').val(),
+                contact_number: $('#contactNumber').val(),
+                // numRooms: $('#numRooms').val(),
+                num_adults: $('#numAdults').val(),
+                num_children: $('#numChildren').val(),
+                discountcode: $('#discountCodeId').val(),
+                price: $('#totalPrice').val(),
+                user: $('#userId').val(),
+
+            };
+
+            // Send an AJAX request to create a booking record
+            $.ajax({
+                url: '/user-module/booking/',
+                method: 'POST',
+                data: formData,
+                headers: {
+                    "X-CSRFTOKEN": "{{ csrf_token }}",
+                    "Authorization": "{{ authToken }}"
+                },
+                success: function (response) {
+                    // Handle booking success
+                    console.log('Booking success!');
+                    window.location.href = "{% url 'user_module:booking_list' %}";
+                },
+                error: function (error) {
+                    // Handle booking error
+                    console.error('Booking failed:', error);
+                    // You can display an error message to the user or handle the error in any desired way
+                }
+        });
+
+        // Close the modal after form submission
+        $('#bookingModal').modal('hide');
+        });
+
+    });
+
+
+</script>
+
+<a href="{% url 'admin_module:download_tour_packages_pdf' %}" class="btn btn-primary">Download Tour Packages PDF</a>

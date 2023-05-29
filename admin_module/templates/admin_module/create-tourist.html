@@ -1,0 +1,103 @@
+{% include 'admin_module/base.html' %}
+
+<!-- Add the Bootstrap CSS file -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Add the Bootstrap JavaScript file -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.min.js"></script>
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Create Tourist Place</title>
+</head>
+<body>
+  <h2>Create Tourist Place</h2>
+
+  <form id="tourist-place-form" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <div>
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required>
+    </div>
+
+    <div>
+      <label for="description">Description:</label>
+      <textarea id="description" name="description" required></textarea>
+    </div>
+
+    <div>
+      <label for="location-link">Location Link:</label>
+      <input type="url" id="location-link" name="location_link" required>
+    </div>
+
+    <div>
+      <label for="images">Images:</label>
+      <input type="file" id="images" name="images" multiple required>
+    </div>
+
+    <div>
+      <label for="address">Address:</label>
+      <input type="text" id="address" name="address" required>
+    </div>
+
+    <div>
+      <label for="pincode">Pincode:</label>
+      <input type="text" id="pincode" name="pincode" required>
+    </div>
+
+    <div>
+      <label for="state">State:</label>
+      <select id="state" name="state" required>
+        <option value="">Select a state</option>
+        <!-- State options will be populated dynamically -->
+      </select>
+    </div>
+
+    <div>
+      <label for="district">District:</label>
+      <select id="district" name="district" required>
+        <!-- District options will be populated dynamically -->
+      </select>
+    </div>
+
+    <button type="submit">Create</button>
+  </form>
+
+  {% load static %}
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="{% static 'js/tourist_place_create.js' %}"></script>
+</body>
+</html>
+
+<script>
+    $('#tourist-place-form').on('submit', function(event) {
+        event.preventDefault();
+        
+        // Perform form validation and submit the form via AJAX
+        var formData = new FormData(this);
+        var authToken = '{{ authToken }}';
+
+        $.ajax({
+          url: '/admin-module/tourist-places/',
+          method: 'POST',
+          data: formData,
+          processData: false,
+          contentType: false,
+          headers: { 
+            "X-CSRFTOKEN": "{{ csrf_token }}",
+            "Authorization": "{{ authToken }}"
+          },
+          success: function(response) {
+            // Handle success response
+            alert('Tourist place created successfully');
+            window.location.href = "{%  url 'admin_module:tourist_list' %}";
+          },
+          error: function(xhr, textStatus, errorThrown) {
+            // Handle error response
+            console.error('Failed to create tourist place:', errorThrown);
+          }
+        });
+    });
+</script>

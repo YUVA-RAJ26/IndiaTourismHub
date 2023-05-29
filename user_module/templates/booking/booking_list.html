@@ -1,0 +1,221 @@
+{% include 'user_module/base.html' %}
+<br>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bookings List</title>
+    <!-- Add Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+
+    <div class="container">
+        
+        <h1>Bookings List</h1>
+        {% if request.user.is_staff %}
+            <p>Showing all bookings</p>
+        {% else %}
+            <p>Showing Bookings of {{ request.user.username }}</p>
+        {% endif %}
+        {% if request.user.is_staff %}
+            <div>
+                <label for="payment-status">Payment Status:</label>
+                <select id="payment-status">
+                <option value="">All</option>
+                <option value="false">Pending</option>
+                <option value="true">Completed</option>
+                </select>
+            </div>
+            <div>
+                <label for="package">Package:</label>
+                <select id="package">
+                    <option value="">All</option>
+                    {% for package in packages %}
+                        <option value="{{ package.id }}">{{ package.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>    
+        {% endif %}    
+        <table class="table">
+            <thead>
+                <tr>
+                    <!-- <th>Booking ID</th> -->
+                    <th>User</th>
+                    <th>Tour Package</th>
+                    <th>Booking Date</th>
+                    <th>Contact Number</th>
+                    <th>Payment Approved</th>
+                    <!-- <th>Num Rooms</th> -->
+                    <th>Num Adults</th>
+                    <th>Num Children</th>
+                    <!-- <th>Discount Code</th> -->
+                    <th>Price</th>
+                    <th>Payment Screenshot</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="bookingsList"></tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Add Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function fetchBookings(paymentStatus, package) {
+
+            // Fetch bookings list via AJAX
+            var authToken = '{{ authToken }}';
+
+            $.ajax({
+                url: '/user-module/booking/',
+                method: 'GET',
+                headers: {
+                    "X-CSRFTOKEN": "{{ csrf_token }}",
+                    "Authorization": "{{ authToken }}"
+                },
+                data: {
+                    'payment_status': paymentStatus,
+                    'package': package,
+                },
+                success: function(response) {
+                    var bookings = response;
+
+                    // Update the bookings table
+                    var bookingsList = $('#bookingsList');
+                    bookingsList.empty();
+
+                    // Iterate over the bookings and display them in the table
+                    for (var i = 0; i < bookings.length; i++) {
+                        var booking = bookings[i];
+
+                        var bookingId = booking.id;
+                        console.log(booking.payment_approved);
+                        var htmlContent = `
+                            {% if request.user.is_staff %}
+                                {% if booking.payment_screenshot %}
+                                    Yet to upload payment screenshot
+                                {% elif booking.payment_approved %}
+                                    Approved
+                                {% else %}
+                                    <button class="btn btn-success approve-btn" data-booking-id="${bookingId}">Approve</button>
+                                    <button class="btn btn-danger reject-btn" data-booking-id="${bookingId}">Reject</button>
+                                {% endif %}
+                            {% else %}
+                                {% if booking.payment_screenshot is null %}
+                                    <a href="{% url 'user_module:booking_payment_update' %}?pk=${bookingId}" class="btn btn-primary">Update Payment</a>
+                                {% endif %}<br>
+
+                                {% if booking.payment_approved %}
+                                    Approved
+                                {% elif booking.payment_rejected %}
+                                    Rejected
+                                {% else %}
+                                    Approval in Process
+                                {% endif %}
+                            {% endif %}
+                        `;
+
+                        var row = `<tr>
+                            <td>${booking.user_name}</td>
+                            <td>${booking.tour_package_name}</td>
+                            <td>${booking.book_date}</td>
+                            <td>${booking.contact_number}</td>
+                            <td>${booking.payment_approved}</td>
+                            <td>${booking.num_adults}</td>
+                            <td>${booking.num_children}</td>
+                            <td>${booking.price}</td>
+                            <td>
+                                <img src="${booking.payment_screenshot}" alt="Payment Screenshot" width="50" height="50">
+                            </td>                            
+                            <td>${htmlContent}</td>
+                        </tr>`;
+
+                        // Add the row to the table body
+                        bookingsList.append(row);
+                    }
+
+                },
+                error: function(error) {
+                    console.error('Failed to fetch bookings:', error);
+                }
+            });
+        }
+        $(document).ready(function() {
+            // Fetch all bookings initially
+            fetchBookings('', '');
+
+            // Handle filter selection change
+            $('#payment-status, #package').change(function() {
+                var paymentStatus = $('#payment-status').val();
+                var package = $('#package').val();
+
+                // Fetch bookings based on the selected filters
+                fetchBookings(paymentStatus, package);
+            });
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            var authToken = '{{ authToken }}';
+
+            // Handle the "Approve" button click
+            $(document).on('click', '.approve-btn', function() {
+                var bookingId = $(this).data('booking-id');
+                alert(bookingId);
+                updateBookingStatus(bookingId, true); // Call the updateBookingStatus function with payment_approved = true
+            });
+    
+            // Handle the "Reject" button click
+            $(document).on('click', '.reject-btn', function() {
+                var bookingId = $(this).data('booking-id');
+                updateBookingStatus(bookingId, false); // Call the updateBookingStatus function with payment_approved = false
+            });
+    
+            // Function to update the booking status via AJAX
+            function updateBookingStatus(bookingId, paymentApproved) {
+                $.ajax({
+                url: '/user-module/booking/' + bookingId + '/mark_completed/',
+                method: 'PUT',
+                data: {
+                    payment_approved: paymentApproved,
+                },
+                headers: {
+                    "X-CSRFTOKEN": "{{ csrf_token }}",
+                    "Authorization": "{{ authToken }}"
+                },
+                success: function(response) {
+                    console.log('Booking status updated successfully');
+                    // Perform any additional actions on success, such as displaying a success message or refreshing the page
+                },
+                error: function(error) {
+                    console.error('Error updating booking status:', error);
+                    // Handle the error in any desired way, such as displaying an error message
+                }
+                });
+            }
+        });
+    
+    </script>
+</body>
+</html>
+
+{% if request.user.is_staff %}
+    <button id="downloadExcelBtn" class="btn btn-primary booking-word">Download Excel</button>
+{% endif %}
+
+<script>
+    $(document).ready(function() {
+        $(document).on('click', '#downloadExcelBtn', function() {
+            var selectedPaymentStatus = $('#payment-status').val();
+            var selectedPackageId = $('#package').val();
+            
+            var downloadUrl = '{% url "user_module:download_bookings_excel" %}?package=' + selectedPackageId + '&payment_status=' + selectedPaymentStatus;
+            
+            // Perform the download by redirecting to the download URL
+            window.location.href = downloadUrl;
+        });
+    });
+</script>
+

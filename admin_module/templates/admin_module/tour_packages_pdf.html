@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        /* Add your CSS styles here */
+        body {
+            font-family: Arial, sans-serif;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tour Packages</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Discount Code</th>
+                <th>Hotels</th>
+                <th>Tourist Place</th>
+                <th>Number of Days</th>
+                <th>Number of Nights</th>
+                <th>Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tour_package in tour_packages %}
+            <tr>
+                <td>{{ tour_package.name }}</td>
+                <td>{{ tour_package.description }}</td>
+                <td>{{ tour_package.discount_code }}</td>
+                <td>
+                    {% for hotel in tour_package.hotels.all %}
+                        {{ hotel.name }}<br>
+                    {% endfor %}
+                </td>
+                <td>{{ tour_package.tourist_place }}</td>
+                <td>{{ tour_package.number_of_days }}</td>
+                <td>{{ tour_package.number_of_nights }}</td>
+                <td>{{ tour_package.price }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment Proceed</title>
+</head>
+<body>
+    <h1>Payment Proceed</h1>
+    <form action="{% url 'user_module:proceed_payment' %}" method="post">
+        {% csrf_token %}
+        <label for="card_number">Card Number:</label>
+        <input type="text" id="card_number" name="card_number">
+        <br>
+        <label for="expiry_date">Expiry Date:</label>
+        <input type="text" id="expiry_date" name="expiry_date" placeholder="MM/YY">
+        <br>
+        <label for="cvc">CVC:</label>
+        <input type="text" id="cvc" name="cvc">
+        <br>
+        <input type="submit" value="Proceed">
+    </form>
+</body>
+</html>

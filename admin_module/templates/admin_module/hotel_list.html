@@ -1,0 +1,188 @@
+
+{% include 'admin_module/base.html' %}
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Bootstrap JavaScript files -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/2.9.3/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.min.js"></script>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- tourist_list.html -->
+<!-- Include Bootstrap CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/css/bootstrap.min.css">
+
+{% load static %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'js/tourist_place_create.js' %}"></script>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hotels</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-4">Hotels</h1>
+        <table id="hotels-table" class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>Pincode</th>
+                    <th>State</th>
+                    <th>District</th>
+                    <th>Contact No</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Hotels data will be populated dynamically -->
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
+
+
+<script>
+    $(document).ready(function() {
+    // Fetch hotels data and populate the table
+    var authToken = '{{ authToken }}';
+
+    $.ajax({
+        url: '/admin-module/hotels/',
+        method: 'GET',
+        headers: { 
+            "X-CSRFTOKEN": "{{ csrf_token }}",
+            "Authorization": "{{ authToken }}"
+        },
+        success: function(data) {
+            var hotels = data.results;
+
+            // Loop through the hotels and append rows to the table
+            for (var i = 0; i < hotels.length; i++) {
+                var hotel = hotels[i];
+                var row = '<tr>' +
+                    '<td>' + hotel.name + '</td>' +
+                    '<td>' + hotel.address + '</td>' +
+                    '<td>' + hotel.pincode + '</td>' +
+                    '<td>' + hotel.state_name + '</td>' +
+                    '<td>' + hotel.district_name + '</td>' +
+                    '<td>' + hotel.contact_no + '</td>' +
+                    '</tr>';
+                $('#hotels-table tbody').append(row);
+            }
+        },
+        error: function(xhr, textStatus, errorThrown) {
+            console.error('Failed to fetch hotels:', errorThrown);
+        }
+    });
+});
+
+</script>
+
+<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addHotelModal">
+    Add Hotel
+</button>
+  
+<div class="modal fade" id="addHotelModal" tabindex="-1" role="dialog" aria-labelledby="addHotelModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addHotelModalLabel">Add Hotel</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="addHotelForm">
+            <div class="form-group">
+              <label for="hotelName">Hotel Name</label>
+              <input type="text" class="form-control" id="hotelName" required>
+            </div>
+            <div class="form-group">
+              <label for="hotelAddress">Address</label>
+              <input type="text" class="form-control" id="hotelAddress" required>
+            </div>
+            <div class="form-group">
+                <label for="hotelContactNo">Contact No</label>
+                <input type="text" class="form-control" id="hotelContactNo" required>
+            </div>
+            <div class="form-group">
+              <label for="pincode">Pincode</label>
+              <input type="text" class="form-control" id="pincode" required>
+            </div>
+            <div class="form-group">
+              <label for="state">State</label>
+              <select class="form-control" id="state" required>
+                <option value="" selected disabled>Select State</option>
+                <!-- State options will be dynamically populated using AJAX -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="district">District</label>
+              <select class="form-control" id="district" required>
+                <option value="" selected disabled>Select District</option>
+                <!-- District options will be dynamically populated based on the selected state using AJAX -->
+              </select>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+              <button type="submit" class="btn btn-primary" id="submitHotel">Add Hotel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+</div>
+
+
+<script>
+$(document).ready(function() {
+
+    // Handle form submission
+    $('#addHotelForm').on('submit', function(event) {
+        event.preventDefault();
+        
+        // Get form data
+        var authToken = '{{ authToken }}';
+        var formData = {
+            name: $('#hotelName').val(),
+            address: $('#hotelAddress').val(),
+            pincode: $('#pincode').val(),
+            state: $('#state').val(),
+            district: $('#district').val(),
+            contact_no: $('#hotelContactNo').val()
+        };
+        
+        // Submit the form via AJAX
+        $.ajax({
+            url: '/admin-module/hotels/',
+            method: 'POST',
+            data: formData,
+            headers: { 
+                "X-CSRFTOKEN": "{{ csrf_token }}",
+                "Authorization": "{{ authToken }}"
+            },
+            success: function(data) {
+                // Handle success
+                $('#addHotelModal').modal('hide');
+                alert('Hotel created successfully.');
+                location.reload();
+                // You can perform additional actions like refreshing the table or fetching updated data
+            },
+            error: function(xhr, textStatus, errorThrown) {
+                // Handle error
+                alert('Failed to create hotel: ' + errorThrown);
+            }
+        });
+    });
+});
+
+
+
+</script>
